@@ -114,7 +114,7 @@ app.get('/weather/:district', async (req, res) => {
     await sql.connect(config);
 
     // Query to select data from the weather table based on district
-    const result = await sql.query`SELECT * FROM districts WHERE name = ${district} AND status = 1;`;
+    const result = await sql.query`SELECT humidity,temperature,air_pressure FROM districts WHERE name = ${district} AND status = 1;`;
 
     // Close the database connection
     await sql.close();
