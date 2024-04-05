@@ -67,11 +67,16 @@ async function updateWeatherDataForAllDistricts() {
     // Connect to the database
     const pool = await sql.connect(config);
     
-    // Query all districts from the database
-    const result = await pool.request().query('SELECT name FROM districts');
+    // Query the latest data for each district with status 1
+    const result = await pool.request().query(`
+      SELECT id, name
+      FROM districts
+      WHERE status = 1
+    `);
     
     // Close the database connection
     await sql.close();
+    
 
     // Iterate over each district and update weather data
     for (const district of result.recordset) {
@@ -127,7 +132,28 @@ app.get('/weather/:district', async (req, res) => {
   }
 });
 
+// Endpoint to get the latest three records for a selected district with status value 0
+app.get('/weather/:district/history', async (req, res) => {
+  const district = req.params.district;
+  try {
+    // Connect to the database
+    const pool = await sql.connect(config);
 
+    // Query to select the latest three records for the selected district with status value 0
+    const result = await pool.request()
+      .input('district', sql.NVarChar, district)
+      .query(`SELECT TOP 3 * FROM districts WHERE name = @district AND status = 0 ORDER BY id DESC`);
+
+    // Close the database connection
+    await sql.close();
+
+    // Send the data as JSON in the response
+    res.json(result.recordset);
+  } catch (error) {
+    console.error('Error fetching historic data:', error.message);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
